@@ -1,0 +1,22 @@
+name: Build and publish macOS release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build universal app
+        run: ./Source/build.sh "$RUNNER_TEMP/AwkPiano.app"
+      - name: Package app
+        run: ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/AwkPiano.app" "$RUNNER_TEMP/AwkPiano-${GITHUB_REF_NAME}.zip"
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/AwkPiano-${GITHUB_REF_NAME}.zip" --clobber
